@@ -1,5 +1,5 @@
 import React from 'react';
-import QRCodeReact from 'qrcode.react';
+import { QRCodeSVG } from 'qrcode.react';
 import { Card } from "@/components/ui/card";
 
 interface Props {
@@ -8,7 +8,7 @@ interface Props {
 
 export const QRCode = ({ text }: Props) => (
   <Card className="p-2 bg-white">
-    <QRCodeReact 
+    <QRCodeSVG 
       value={text}
       size={64}
       level="L"
