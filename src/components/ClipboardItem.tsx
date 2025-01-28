@@ -30,6 +30,7 @@ export const ClipboardItem = ({ item, onDelete }: Props) => {
       toast({
         title: "Copied!",
         description: "Content copied to clipboard",
+        className: "bottom-0 right-0 fixed md:static",
       });
       console.log('Copied to clipboard:', item.id);
     } catch (err) {
@@ -38,6 +39,7 @@ export const ClipboardItem = ({ item, onDelete }: Props) => {
         title: "Error",
         description: "Failed to copy content",
         variant: "destructive",
+        className: "bottom-0 right-0 fixed md:static",
       });
     }
   };
@@ -49,20 +51,28 @@ export const ClipboardItem = ({ item, onDelete }: Props) => {
     toast({
       title: "Deleted",
       description: "Item removed from clipboard",
+      className: "bottom-0 right-0 fixed md:static",
     });
   };
 
-  const timeLeft = Math.floor((item.expiresAt - Date.now()) / (1000 * 60 * 60));
+  const getTimeLeft = () => {
+    const timeLeft = Math.floor((item.expiresAt - Date.now()) / (1000 * 60));
+    if (timeLeft < 60) {
+      return `${timeLeft} minutes`;
+    }
+    const hours = Math.floor(timeLeft / 60);
+    return `${hours} hours`;
+  };
 
   return (
     <>
-      <Card className="p-4 space-y-4">
+      <Card className="p-4 space-y-4 hover:shadow-lg transition-shadow duration-200 bg-card">
         <div className="flex justify-between items-start">
           <div className="flex-1 mr-4">
-            <p className="text-sm text-gray-500">
-              Expires in {timeLeft} hours
+            <p className="text-sm text-muted-foreground">
+              Expires in {getTimeLeft()}
             </p>
-            <p className="mt-2 break-words">
+            <p className="mt-2 break-words text-card-foreground">
               {item.content}
             </p>
           </div>
