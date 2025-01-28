@@ -25,6 +25,12 @@ export const getItems = (): ClipboardItem[] => {
   return items ? JSON.parse(items) : [];
 };
 
+export const getItemById = (id: string): ClipboardItem | null => {
+  const items = getItems();
+  const item = items.find(item => item.id === id);
+  return item || null;
+};
+
 export const deleteItem = (id: string): void => {
   const items = getItems().filter(item => item.id !== id);
   localStorage.setItem('clipboard-items', JSON.stringify(items));
