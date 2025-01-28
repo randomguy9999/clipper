@@ -9,6 +9,7 @@ import { Moon, Sun } from 'lucide-react';
 const Index = () => {
   const [items, setItems] = useState<ClipboardItem[]>([]);
   const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
 
   const updateItems = () => {
     deleteExpiredItems();
@@ -16,10 +17,14 @@ const Index = () => {
   };
 
   useEffect(() => {
+    setMounted(true);
     updateItems();
-    const interval = setInterval(updateItems, 1000); // Check every second
+    const interval = setInterval(updateItems, 1000);
     return () => clearInterval(interval);
   }, []);
+
+  // Avoid hydration mismatch
+  if (!mounted) return null;
 
   return (
     <div className="min-h-screen bg-background transition-colors duration-300">

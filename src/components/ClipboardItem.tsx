@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { ClipboardItem as IClipboardItem, deleteItem } from '@/lib/storage';
 import { QRCode } from './QRCode';
+import { useNavigate } from 'react-router-dom';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,6 +23,7 @@ interface Props {
 
 export const ClipboardItem = ({ item, onDelete }: Props) => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [showDeleteDialog, setShowDeleteDialog] = React.useState(false);
 
   const handleCopy = async () => {
@@ -30,7 +32,7 @@ export const ClipboardItem = ({ item, onDelete }: Props) => {
       toast({
         title: "Copied!",
         description: "Content copied to clipboard",
-        className: "bottom-0 right-0 fixed md:static",
+        className: "fixed bottom-4 right-4 md:static",
       });
       console.log('Copied to clipboard:', item.id);
     } catch (err) {
@@ -39,7 +41,7 @@ export const ClipboardItem = ({ item, onDelete }: Props) => {
         title: "Error",
         description: "Failed to copy content",
         variant: "destructive",
-        className: "bottom-0 right-0 fixed md:static",
+        className: "fixed bottom-4 right-4 md:static",
       });
     }
   };
@@ -51,7 +53,7 @@ export const ClipboardItem = ({ item, onDelete }: Props) => {
     toast({
       title: "Deleted",
       description: "Item removed from clipboard",
-      className: "bottom-0 right-0 fixed md:static",
+      className: "fixed bottom-4 right-4 md:static",
     });
   };
 
@@ -64,16 +66,34 @@ export const ClipboardItem = ({ item, onDelete }: Props) => {
     return `${hours} hours`;
   };
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Don't navigate if clicking buttons
+    if ((e.target as HTMLElement).tagName === 'BUTTON') return;
+    navigate(`/note/${item.id}`);
+  };
+
+  const trimContent = (content: string) => {
+    const lines = content.split('\n').slice(0, 3);
+    let trimmed = lines.join('\n');
+    if (content.split('\n').length > 3 || trimmed.length > 200) {
+      trimmed = trimmed.slice(0, 200) + '...';
+    }
+    return trimmed;
+  };
+
   return (
     <>
-      <Card className="p-4 space-y-4 hover:shadow-lg transition-shadow duration-200 bg-card">
+      <Card 
+        className="p-4 space-y-4 hover:shadow-lg transition-shadow duration-200 bg-card cursor-pointer"
+        onClick={handleCardClick}
+      >
         <div className="flex justify-between items-start">
           <div className="flex-1 mr-4">
             <p className="text-sm text-muted-foreground">
               Expires in {getTimeLeft()}
             </p>
-            <p className="mt-2 break-words text-card-foreground">
-              {item.content}
+            <p className="mt-2 break-words text-card-foreground whitespace-pre-wrap">
+              {trimContent(item.content)}
             </p>
           </div>
           <QRCode text={item.content} />
