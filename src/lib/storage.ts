@@ -10,7 +10,7 @@ export const saveItem = (content: string): ClipboardItem => {
     id: Math.random().toString(36).substring(7),
     content,
     createdAt: Date.now(),
-    expiresAt: Date.now() + (120 * 60 * 60 * 1000), // 120 hours
+    expiresAt: Date.now() + (60 * 1000), // 60 seconds
   };
 
   const items = getItems();
