@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, KeyboardEvent } from 'react';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -29,12 +29,20 @@ export const Editor = () => {
     console.log('Content saved:', item);
   };
 
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && e.shiftKey) {
+      e.preventDefault();
+      handleSave();
+    }
+  };
+
   return (
     <div className="space-y-4 w-full max-w-2xl mx-auto">
       <Textarea
         value={content}
         onChange={(e) => setContent(e.target.value)}
-        placeholder="Paste your content here..."
+        onKeyDown={handleKeyDown}
+        placeholder="Paste your content here... (Shift + Enter to save)"
         className="min-h-[200px] text-lg p-4"
       />
       <Button 
