@@ -1,17 +1,30 @@
 import React from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Copy, Trash2 } from "lucide-react";
+import { ArrowLeft, Copy, Trash2, Loader2 } from "lucide-react";
 import { getItemById, deleteItem } from '@/lib/storage';
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from '@tanstack/react-query';
+import { QRCode } from '@/components/QRCode';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const NoteDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [isDeleting, setIsDeleting] = React.useState(false);
 
-  const { data: note } = useQuery({
+  const { data: note, isLoading } = useQuery({
     queryKey: ['note', id],
     queryFn: () => id ? getItemById(id) : null,
   });
@@ -24,7 +37,7 @@ const NoteDetail = () => {
       toast({
         title: "Copied!",
         description: "Content copied to clipboard",
-        className: "fixed bottom-4 right-4 md:static",
+        duration: 1000,
       });
     } catch (err) {
       console.error('Failed to copy:', err);
@@ -32,7 +45,7 @@ const NoteDetail = () => {
         title: "Error",
         description: "Failed to copy content",
         variant: "destructive",
-        className: "fixed bottom-4 right-4 md:static",
+        duration: 1000,
       });
     }
   };
@@ -41,11 +54,12 @@ const NoteDetail = () => {
     if (!note) return;
     
     try {
+      setIsDeleting(true);
       await deleteItem(note.id);
       toast({
         title: "Deleted",
         description: "Note has been removed",
-        className: "fixed bottom-4 right-4 md:static",
+        duration: 1000,
       });
       navigate('/');
     } catch (err) {
@@ -54,10 +68,28 @@ const NoteDetail = () => {
         title: "Error",
         description: "Failed to delete note",
         variant: "destructive",
-        className: "fixed bottom-4 right-4 md:static",
+        duration: 1000,
       });
+    } finally {
+      setIsDeleting(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background p-8">
+        <Link to="/">
+          <Button variant="ghost" className="mb-4">
+            <ArrowLeft className="mr-2" /> Back
+          </Button>
+        </Link>
+        <div className="flex flex-col items-center justify-center space-y-4 mt-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-muted-foreground">Loading note details...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!note) {
     return (
@@ -67,33 +99,58 @@ const NoteDetail = () => {
             <ArrowLeft className="mr-2" /> Back
           </Button>
         </Link>
-        <div className="text-center">Note not found</div>
+        <div className="text-center mt-12">
+          <p className="text-muted-foreground">Note not found</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background p-8">
+    <div className="min-h-screen bg-background p-4 md:p-8">
       <Link to="/">
         <Button variant="ghost" className="mb-4">
           <ArrowLeft className="mr-2" /> Back
         </Button>
       </Link>
       <div className="max-w-2xl mx-auto">
-        <div className="bg-card rounded-lg p-6 shadow-lg">
-          <p className="text-sm text-muted-foreground mb-4">
-            Expires in: {Math.floor((note.expiresAt - Date.now()) / (1000 * 60))} minutes
-          </p>
-          <p className="whitespace-pre-wrap break-words text-card-foreground mb-6">
+        <div className="bg-card rounded-lg p-6 shadow-lg space-y-6">
+          <div className="flex justify-between items-start">
+            <p className="text-sm text-muted-foreground">
+              Expires in: {Math.floor((note.expiresAt - Date.now()) / (1000 * 60))} minutes
+            </p>
+            <QRCode text={note.content} />
+          </div>
+          
+          <p className="whitespace-pre-wrap break-words text-card-foreground">
             {note.content}
           </p>
-          <div className="flex gap-4 justify-end">
-            <Button onClick={handleCopy} className="w-32">
+          
+          <div className="flex flex-col sm:flex-row gap-4 justify-end">
+            <Button onClick={handleCopy} className="w-full sm:w-32">
               <Copy className="mr-2 h-4 w-4" /> Copy
             </Button>
-            <Button onClick={handleDelete} variant="destructive" className="w-32">
-              <Trash2 className="mr-2 h-4 w-4" /> Delete
-            </Button>
+            
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" className="w-full sm:w-32" disabled={isDeleting}>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  {isDeleting ? 'Deleting...' : 'Delete'}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="sm:max-w-[425px]">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Note</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete this note? This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </div>
       </div>
