@@ -1,119 +1,66 @@
-import React, { useState, KeyboardEvent } from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { saveItem } from '@/lib/storage';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
+import { createItem } from '@/lib/storage';
 
-interface EditorProps {
-  onSave: () => void;
-}
-
-export const Editor = ({ onSave }: EditorProps) => {
+const Editor = () => {
   const [content, setContent] = useState('');
-  const [customHours, setCustomHours] = useState('1');
-  const [expiryOption, setExpiryOption] = useState('1');
+  const [selectedExpiry, setSelectedExpiry] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleSave = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!content.trim()) {
       toast({
         title: "Error",
         description: "Please enter some content",
         variant: "destructive",
+        duration: 1000,
       });
       return;
     }
 
-    const expiryHours = expiryOption === 'custom' 
-      ? parseInt(customHours) 
-      : expiryOption === 'forever' 
-        ? 8760 // 1 year
-        : parseInt(expiryOption);
-
     try {
-      await saveItem(content, expiryHours * 60 * 60 * 1000);
-      setContent('');
-      onSave();
-      
+      setIsSubmitting(true);
+      const note = await createItem(content, selectedExpiry);
       toast({
         title: "Success",
-        description: "Content saved to clipboard",
-        className: "bottom-0 right-0 fixed md:static",
+        description: "Note created successfully",
+        duration: 1000,
       });
+      setContent('');
+      navigate(`/note/${note.id}`);
     } catch (error) {
-      console.error('Failed to save:', error);
+      console.error('Failed to create note:', error);
       toast({
         title: "Error",
-        description: "Failed to save content",
+        description: "Failed to create note",
         variant: "destructive",
-        className: "bottom-0 right-0 fixed md:static",
+        duration: 1000,
       });
-    }
-  };
-
-  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && (e.shiftKey || e.ctrlKey)) {
-      e.preventDefault();
-      handleSave();
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="space-y-4">
-      <Textarea
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        onKeyDown={handleKeyDown}
-        placeholder="Write your note here... (Shift + Enter or Ctrl + Enter to save)"
-        className="min-h-[200px] text-lg p-4 bg-background border-2 focus:ring-2 transition-all duration-200"
-      />
-      
-      <div className="flex gap-4 flex-col sm:flex-row">
-        <Select
-          value={expiryOption}
-          onValueChange={setExpiryOption}
-        >
-          <SelectTrigger className="w-full sm:w-[180px]">
-            <SelectValue placeholder="Select expiry time" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="1">1 hour</SelectItem>
-            <SelectItem value="6">6 hours</SelectItem>
-            <SelectItem value="12">12 hours</SelectItem>
-            <SelectItem value="24">24 hours</SelectItem>
-            <SelectItem value="forever">Forever</SelectItem>
-            <SelectItem value="custom">Custom</SelectItem>
-          </SelectContent>
-        </Select>
-
-        {expiryOption === 'custom' && (
-          <div className="flex gap-2 items-center">
-            <Input
-              type="number"
-              value={customHours}
-              onChange={(e) => setCustomHours(e.target.value)}
-              className="w-24"
-              min="1"
-            />
-            <span className="text-muted-foreground">hours</span>
-          </div>
-        )}
-
-        <Button 
-          onClick={handleSave}
-          className="w-full sm:w-auto sm:flex-1"
-        >
-          Save to Clipboard
+    <div className="editor">
+      <form onSubmit={handleSubmit}>
+        <textarea
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          placeholder="Write your note here..."
+          className="textarea"
+        />
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? 'Submitting...' : 'Submit'}
         </Button>
-      </div>
+      </form>
     </div>
   );
 };
+
+export default Editor;

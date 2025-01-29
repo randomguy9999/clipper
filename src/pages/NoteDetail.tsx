@@ -122,7 +122,7 @@ const NoteDetail = () => {
             <QRCode text={note.content} />
           </div>
           
-          <p className="whitespace-pre-wrap break-words text-card-foreground">
+          <p className="whitespace-pre-wrap break-words text-card-foreground text-left">
             {note.content}
           </p>
           
