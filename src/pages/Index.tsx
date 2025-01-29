@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import Editor from '@/components/Editor';
+import { Editor } from '@/components/Editor';
 import { ClipboardItem as ClipboardItemComponent } from '@/components/ClipboardItem';
 import { getItems, ClipboardItem, deleteExpiredItems } from '@/lib/storage';
 import { useTheme } from 'next-themes';
