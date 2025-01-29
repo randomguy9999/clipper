@@ -5,20 +5,24 @@ import { getItems, ClipboardItem, deleteExpiredItems } from '@/lib/storage';
 import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
 import { Moon, Sun } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 
 const Index = () => {
-  const [items, setItems] = useState<ClipboardItem[]>([]);
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
-  const updateItems = () => {
-    deleteExpiredItems();
-    setItems(getItems());
+  const { data: items = [], refetch } = useQuery({
+    queryKey: ['notes'],
+    queryFn: getItems,
+  });
+
+  const updateItems = async () => {
+    await deleteExpiredItems();
+    refetch();
   };
 
   useEffect(() => {
     setMounted(true);
-    updateItems();
     const interval = setInterval(updateItems, 1000);
     return () => clearInterval(interval);
   }, []);

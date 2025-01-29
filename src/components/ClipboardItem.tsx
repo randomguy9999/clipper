@@ -46,15 +46,25 @@ export const ClipboardItem = ({ item, onDelete }: Props) => {
     }
   };
 
-  const handleDelete = () => {
-    deleteItem(item.id);
-    onDelete();
-    setShowDeleteDialog(false);
-    toast({
-      title: "Deleted",
-      description: "Item removed from clipboard",
-      className: "fixed bottom-4 right-4 md:static",
-    });
+  const handleDelete = async () => {
+    try {
+      await deleteItem(item.id);
+      onDelete();
+      setShowDeleteDialog(false);
+      toast({
+        title: "Deleted",
+        description: "Item removed from clipboard",
+        className: "fixed bottom-4 right-4 md:static",
+      });
+    } catch (err) {
+      console.error('Failed to delete:', err);
+      toast({
+        title: "Error",
+        description: "Failed to delete item",
+        variant: "destructive",
+        className: "fixed bottom-4 right-4 md:static",
+      });
+    }
   };
 
   const getTimeLeft = () => {

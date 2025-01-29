@@ -22,7 +22,7 @@ export const Editor = ({ onSave }: EditorProps) => {
   const [expiryOption, setExpiryOption] = useState('1');
   const { toast } = useToast();
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!content.trim()) {
       toast({
         title: "Error",
@@ -38,17 +38,25 @@ export const Editor = ({ onSave }: EditorProps) => {
         ? 8760 // 1 year
         : parseInt(expiryOption);
 
-    const item = saveItem(content, expiryHours * 60 * 60 * 1000);
-    setContent('');
-    onSave();
-    
-    toast({
-      title: "Success",
-      description: "Content saved to clipboard",
-      className: "bottom-0 right-0 fixed md:static",
-    });
-    
-    console.log('Content saved:', item);
+    try {
+      await saveItem(content, expiryHours * 60 * 60 * 1000);
+      setContent('');
+      onSave();
+      
+      toast({
+        title: "Success",
+        description: "Content saved to clipboard",
+        className: "bottom-0 right-0 fixed md:static",
+      });
+    } catch (error) {
+      console.error('Failed to save:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save content",
+        variant: "destructive",
+        className: "bottom-0 right-0 fixed md:static",
+      });
+    }
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {

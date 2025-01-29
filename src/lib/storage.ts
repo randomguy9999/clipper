@@ -1,3 +1,5 @@
+import { supabase } from "@/integrations/supabase/client";
+
 export interface ClipboardItem {
   id: string;
   content: string;
@@ -5,45 +7,98 @@ export interface ClipboardItem {
   expiresAt: number;
 }
 
-export const saveItem = (content: string, expiryTime: number): ClipboardItem => {
-  const item: ClipboardItem = {
-    id: Math.random().toString(36).substring(7),
+export const saveItem = async (content: string, expiryTime: number): Promise<ClipboardItem> => {
+  const item = {
     content,
-    createdAt: Date.now(),
-    expiresAt: Date.now() + expiryTime,
+    expires_at: new Date(Date.now() + expiryTime).toISOString(),
   };
 
-  const items = getItems();
-  localStorage.setItem('clipboard-items', JSON.stringify([item, ...items]));
-  
-  console.log('Saved new clipboard item:', item);
-  return item;
-};
+  const { data, error } = await supabase
+    .from('notes')
+    .insert(item)
+    .select()
+    .single();
 
-export const getItems = (): ClipboardItem[] => {
-  const items = localStorage.getItem('clipboard-items');
-  return items ? JSON.parse(items) : [];
-};
-
-export const getItemById = (id: string): ClipboardItem | null => {
-  const items = getItems();
-  const item = items.find(item => item.id === id);
-  return item || null;
-};
-
-export const deleteItem = (id: string): void => {
-  const items = getItems().filter(item => item.id !== id);
-  localStorage.setItem('clipboard-items', JSON.stringify(items));
-  console.log('Deleted clipboard item:', id);
-};
-
-export const deleteExpiredItems = (): void => {
-  const items = getItems();
-  const currentTime = Date.now();
-  const validItems = items.filter(item => item.expiresAt > currentTime);
-  
-  if (items.length !== validItems.length) {
-    localStorage.setItem('clipboard-items', JSON.stringify(validItems));
-    console.log('Removed expired items');
+  if (error) {
+    console.error('Error saving note:', error);
+    throw error;
   }
+
+  console.log('Saved new note:', data);
+  
+  return {
+    id: data.id,
+    content: data.content,
+    createdAt: new Date(data.created_at).getTime(),
+    expiresAt: new Date(data.expires_at).getTime(),
+  };
+};
+
+export const getItems = async (): Promise<ClipboardItem[]> => {
+  const { data, error } = await supabase
+    .from('notes')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching notes:', error);
+    throw error;
+  }
+
+  return data.map(item => ({
+    id: item.id,
+    content: item.content,
+    createdAt: new Date(item.created_at).getTime(),
+    expiresAt: new Date(item.expires_at).getTime(),
+  }));
+};
+
+export const getItemById = async (id: string): Promise<ClipboardItem | null> => {
+  const { data, error } = await supabase
+    .from('notes')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Error fetching note:', error);
+    throw error;
+  }
+
+  if (!data) return null;
+
+  return {
+    id: data.id,
+    content: data.content,
+    createdAt: new Date(data.created_at).getTime(),
+    expiresAt: new Date(data.expires_at).getTime(),
+  };
+};
+
+export const deleteItem = async (id: string): Promise<void> => {
+  const { error } = await supabase
+    .from('notes')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error('Error deleting note:', error);
+    throw error;
+  }
+  
+  console.log('Deleted note:', id);
+};
+
+export const deleteExpiredItems = async (): Promise<void> => {
+  const { error } = await supabase
+    .from('notes')
+    .delete()
+    .lt('expires_at', new Date().toISOString());
+
+  if (error) {
+    console.error('Error deleting expired notes:', error);
+    throw error;
+  }
+  
+  console.log('Removed expired notes');
 };
