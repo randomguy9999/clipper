@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { createItem } from '@/lib/storage';
+import { saveItem } from '@/lib/storage';
 
 const Editor = () => {
   const [content, setContent] = useState('');
@@ -25,7 +25,7 @@ const Editor = () => {
 
     try {
       setIsSubmitting(true);
-      const note = await createItem(content, selectedExpiry);
+      const note = await saveItem(content, selectedExpiry);
       toast({
         title: "Success",
         description: "Note created successfully",
